@@ -5,9 +5,9 @@ name = "pypi"
 
 [packages]
 randonautentropy = "*"
-lyagushka = {path = "./lyagushka-0.1.0-py2.py3-none-any.whl"}
 questionary = "*"
 rich = "*"
+lyagushka = {file = "lyagushka-1.1.0-cp312-cp312-manylinux_2_34_x86_64.whl"}
 
 [dev-packages]
 

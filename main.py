@@ -5,6 +5,7 @@ import questionary
 from rich.console import Console
 from rich.text import Text
 from rich.progress import Progress, TextColumn, BarColumn
+from pprint import pprint
 
 def generate_random_data(size=1024, max_value=100):
 
@@ -26,11 +27,13 @@ def generate_random_data(size=1024, max_value=100):
     return random_data
 
 def pull_number(numbers: set, top: int, amount: int):
-    dataset = generate_random_data(444, top-1)
+    dataset = generate_random_data(top, top-1)
     dataset.sort()
+    pprint(dataset)
     # calculate the anomalies in the data
     zhaba = Lyagushka(dataset)
-    analysis_results = json.loads(zhaba.search(4.0, 10))
+    analysis_results = json.loads(zhaba.search(1.0, 3))
+    pprint(analysis_results)
     pick = [obj for obj in analysis_results if obj['num_elements'] == max(obj['num_elements'] for obj in analysis_results)]
     for p in pick:
         if len(numbers) < amount:
