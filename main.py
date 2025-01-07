@@ -6,11 +6,13 @@ from rich.console import Console
 from rich.text import Text
 from rich.progress import Progress, TextColumn, BarColumn
 
-# Validate if a string can be converted to a float
-def can_be_float(s):
+# Validate Z-Score
+def z_thresh(s):
     try:
-        float(s)
-        return True
+        if float(s) >= 1.0 and float(s) <= 5.0:
+            return True
+        else:
+            return False
     except ValueError:
         return False
 
@@ -62,9 +64,12 @@ def pull_number(numbers: set, top: int, amount: int, z_score: float):
 
 # Main function to drive the lottery draw process
 def main():
+    
     console = Console()
+    
     # Display an introduction to the lottery process
-    console.print("\nEach lottery ball is selected by analyzing random values.\n", style="italic green")
+    description = "\nEach lottery ball is selected by generating hundreds of random values within the provided range. The data is analyzed to identify number clusters. The centroid values of the attractor clusters with a z-score above the set threshold are selected as lotto numbers. This process repeats until all balls are drawn. The entire method is a one-dimensional analogy to how attractor points are calculated in Randonautica.\n"
+    console.print(description, style="italic green")
 
     # Get the number of lottery balls to draw
     num_lotto_balls = int(questionary.text(
@@ -89,9 +94,9 @@ def main():
 
     # Get the Z-score threshold for anomaly detection
     z_score_threshold = float(questionary.text(
-        "Minimum Z-Score Threshold? (default: 4.0)",
-        validate=lambda val: can_be_float(val) or "Please enter a valid value (1.0 - 5.0).",
-        default="4.0"
+        "Minimum Z-Score Threshold? (default: 3.0)",
+        validate=lambda val: z_thresh(val) or "Please enter a valid value (1.0 - 5.0).",
+        default="3.0"
     ).ask())
 
     numbers = set()
