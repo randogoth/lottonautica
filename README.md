@@ -1,6 +1,4 @@
-
-
-# README
+# Lottonautica
 
 ## Random Lottery Number Generator
 
