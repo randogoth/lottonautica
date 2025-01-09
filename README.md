@@ -4,7 +4,7 @@
 
 ## Random Lottery Number Generator
 
-This Python program generates lottery numbers using random entropy, statistical analysis, and Z-score-based  cluster detection. It identifies clusters in a dataset to select attractor points, which are then scaled and presented as lottery numbers.
+This Python program generates lottery numbers using random entropy, statistical analysis, and Z-score-based cluster detection using [Lyagushka](https://github.com/randogoth/lyagushka). It identifies clusters in a dataset to select attractor points, which are then scaled and presented as lottery numbers.
 
 ---
 
