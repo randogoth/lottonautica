@@ -1,5 +1,7 @@
 # Lottonautica
 
+![image](https://github.com/user-attachments/assets/6a946397-fbdb-4a86-8e8b-7bf658f09fa3)
+
 ## Random Lottery Number Generator
 
 This Python program generates lottery numbers using random entropy, statistical analysis, and Z-score-based  cluster detection. It identifies clusters in a dataset to select attractor points, which are then scaled and presented as lottery numbers.
