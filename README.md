@@ -20,7 +20,7 @@ This Python program generates lottery numbers using random entropy, statistical 
 
 ### Prerequisites
 
-- Python 3.12 or later
+- Python 3.12
 - `pipenv` for dependency management
 
 ### Setup
