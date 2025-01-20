@@ -5,9 +5,8 @@ name = "pypi"
 
 [packages]
 randonautentropy = "*"
-questionary = "*"
-rich = "*"
 lyagushka = {file = "https://github.com/randogoth/lyagushka/releases/download/1.1.1/lyagushka-1.1.1-cp312-cp312-manylinux_2_34_x86_64.whl"}
+streamlit = "*"
 
 [dev-packages]
 

@@ -1,10 +1,9 @@
+import streamlit as st
+import streamlit.components.v1 as components
 from lyagushka import Lyagushka
 from randonautentropy import rndo
 import json
-import questionary
-from rich.console import Console
-from rich.text import Text
-from rich.progress import Progress, TextColumn, BarColumn
+import time
 
 # Validate Z-Score
 def z_thresh(s):
@@ -19,105 +18,131 @@ def z_thresh(s):
 # Generate random data with a specified size and maximum value
 def generate_random_data(size=1024, max_value=100):
     random_data = []
-    # Calculate the number of bytes required to represent the max value
     max_value_bytes = (max_value.bit_length() + 7) // 8
     max_int_for_bytes = 2**(max_value_bytes * 8) - 1
-    # Define the cutoff to ensure uniform distribution
     mod_cutoff = max_int_for_bytes - (max_int_for_bytes % max_value) - 1
 
     while len(random_data) < size:
-        # Generate random hexadecimal data
         hex_data = rndo.get(length=max_value_bytes * size)
-        # Process the hex data in chunks
         for i in (hex_data[j:j + 2 * max_value_bytes] for j in range(0, len(hex_data), 2 * max_value_bytes)):
-            num = int(i, 16)  # Convert hex chunk to integer
+            num = int(i, 16)
             if num <= mod_cutoff:
-                # Add the value to random_data if within the cutoff
                 random_data.append(num % (max_value + 1))
-                # Break early if enough data is collected
                 if len(random_data) >= size:
                     break
     return random_data
 
 # Analyze and select numbers based on Z-score
-def pull_number(numbers: set, top: int, amount: int, z_score: float):
-    
-    # Generate and sort a dataset of random numbers
+def pull_number(numbers: set, top: int, amount: int, z_score: float, progress_bar, task_name):
     dataset = generate_random_data(3000, 999)
     dataset.sort()
-    
-    # Analyze the dataset using Lyagushka
     zhaba = Lyagushka(dataset)
     analysis_results = json.loads(zhaba.search(4.0, 30))
 
-    # Filter results for valid Z-scores
     results = [obj for obj in analysis_results if obj['z_score'] is not None]
     max_z_score = max(obj['z_score'] for obj in results)
 
-    for obj in results:
-        # Check if the object has the maximum Z-score and meets the threshold
+    total_tasks = amount - len(numbers)
+    for idx, obj in enumerate(results):
         if obj['z_score'] == max_z_score and obj['z_score'] >= z_score:
-            # Ensure the centroid is not an x.5 and add the scaled value
             if len(numbers) < amount and (obj['centroid'] % 1 != 0.5):
                 numbers.add(int((obj['centroid'] / 999) * top) + 1)
+        # Update progress
+        progress_bar.progress((len(numbers) / amount))
+        time.sleep(0.05)  # Simulate some delay
+        if len(numbers) >= amount:
+            break
     return numbers
 
-# Main function to drive the lottery draw process
-def main():
-    
-    console = Console()
-    
-    # Display an introduction to the lottery process
-    description = "\nEach lottery ball is selected by generating hundreds of random values within the provided range. The data is analyzed to identify number clusters. The centroid values of the attractor clusters with a z-score above the set threshold are selected as lotto numbers. This process repeats until all balls are drawn. The entire method is a one-dimensional analogy to how attractor points are calculated in Randonautica.\n"
-    console.print(description, style="italic green")
+def generate_ball_html(numbers, bonus):
+        balls_html = ""
+        for num in numbers:
+            balls_html += f"""
+            <div class="ball white">{num}</div>
+            """
+        balls_html += f"""
+        <div class="ball yellow">{bonus}</div>
+        """
+        return balls_html
 
-    # Get the number of lottery balls to draw
-    num_lotto_balls = int(questionary.text(
-        "Amount of balls to draw? (default: 5)",
-        validate=lambda val: val.isdigit() or "Please enter a valid integer.",
-        default="5"
-    ).ask())
+description = "\nEach lottery ball is selected by generating hundreds of random values within the provided range. The data is analyzed to identify number clusters. The centroid values of the attractor clusters with a z-score above the set threshold are selected as lotto numbers. This process repeats until all balls are drawn. The entire method is a one-dimensional analogy to how attractor points are calculated in Randonautica.\n"
 
-    # Get the highest possible number in the lottery
-    highest_number = int(questionary.text(
-        "Amount of balls in the lottery? (default: 70)",
-        validate=lambda val: val.isdigit() or "Please enter a valid integer.",
-        default="70"
-    ).ask())
+# Streamlit App
+st.title("Lottonautica")
+st.write(description)
 
-    # Get the highest number for the extra draw
-    highest_extra_ball = int(questionary.text(
-        "Amount of balls in the extra draw? (default: 25)",
-        validate=lambda val: val.isdigit() or "Please enter a valid integer.",
-        default="25"
-    ).ask())
+# User Inputs
+num_lotto_balls = st.number_input("Amount of balls to draw:", min_value=1, max_value=20, value=5)
+highest_number = st.number_input("Amount of balls in the lottery:", min_value=1, max_value=100, value=70)
+highest_extra_ball = st.number_input("Amount of balls in the extra draw:", min_value=1, max_value=50, value=25)
+z_score_threshold = st.number_input("Minimum Z-Score Threshold:", min_value=1.0, max_value=5.0, value=3.0)
 
-    # Get the Z-score threshold for anomaly detection
-    z_score_threshold = float(questionary.text(
-        "Minimum Z-Score Threshold? (default: 3.0)",
-        validate=lambda val: z_thresh(val) or "Please enter a valid value (1.0 - 5.0).",
-        default="3.0"
-    ).ask())
-
+if st.button("Generate Lottery Numbers"):
+    st.subheader("Generating Lottery Numbers...")
     numbers = set()
     megaball = set()
 
-    # Show a progress bar during the number drawing process
-    with Progress(TextColumn("[progress.description]{task.description}"), BarColumn(), transient=True) as progress:
-        task = progress.add_task("Drawing numbers...", total=num_lotto_balls + 1)
-        # Draw main lottery numbers
-        while len(numbers) < num_lotto_balls:
-            numbers = pull_number(numbers, highest_number, num_lotto_balls, z_score_threshold)
-            progress.update(task, completed=len(numbers))
-        # Draw the extra ball
-        while len(megaball) < 1:
-            megaball = pull_number(megaball, highest_extra_ball, 1, z_score_threshold)
+    # Progress bar for main numbers
+    progress_main = st.progress(0)
+    status_text = st.empty()
 
-    # Display the results
-    console.print("\nLottery numbers:\n", style="bold green")
-    lottery_balls = [Text(f" {n} ", style="bold black on white") for n in sorted(numbers)]
-    bonus_ball = Text(f" {list(megaball)[0]} ", style="bold black on yellow")
-    console.print(*lottery_balls, bonus_ball, sep=" ")
+    st.text("Drawing main numbers...")
+    while len(numbers) < num_lotto_balls:
+        # Update numbers and progress
+        numbers = pull_number(numbers, highest_number, num_lotto_balls, z_score_threshold, progress_main, "Main Numbers")
+        progress_main.progress(len(numbers) / num_lotto_balls)
 
-if __name__ == "__main__":
-    main()
+    # Progress bar for extra ball
+    progress_extra = st.progress(0)
+    st.text("Drawing the extra ball...")
+    while len(megaball) < 1:
+        # Update megaball and progress
+        megaball = pull_number(megaball, highest_extra_ball, 1, z_score_threshold, progress_extra, "Bonus Ball")
+
+    # Display Results
+    st.subheader("Lottery Numbers")
+    main_numbers = sorted(numbers)
+    bonus_number = list(megaball)[0]
+
+    # Full HTML with inline CSS
+    custom_html = f"""
+    <html>
+    <head>
+        <style>
+            .container {{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-top: 20px;
+            }}
+            .ball {{
+                width: 50px;
+                height: 50px;
+                margin: 5px;
+                border-radius: 50%;
+                text-align: center;
+                line-height: 50px;
+                font-weight: bold;
+                font-size: 18px;
+                font-family: sans-serif;
+                border: 2px solid black;
+            }}
+            .white {{
+                background-color: white;
+                color: black;
+            }}
+            .yellow {{
+                background-color: yellow;
+                color: black;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            {generate_ball_html(main_numbers, bonus_number)}
+        </div>
+    </body>
+    </html>
+    """
+
+    components.html(custom_html, height=150)
