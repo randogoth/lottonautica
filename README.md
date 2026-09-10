@@ -1,4 +1,4 @@
-Repository moved to [codeberg.org/randogoth/lottonautica.git](https://codeberg.org/randogoth/lottonautica.git)
+Repository moved to [code.randogoth.com/randogoth/lottonautica.git](https://code.randogoth.com/randogoth/lottonautica.git)
 
 # Lottonautica
 
